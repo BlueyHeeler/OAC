@@ -6,27 +6,7 @@ CHAR_POS_DOWN: .half 4, 1
 ITEM_1_BYTE: .byte 0
 PEQUENO_GRANDE: .byte 1
 .text
-GAME_LOOP:
-	# ecall read time
-	li a7,130
-	ecall
-	mv t0,a0
-	mv t1,a1
-	#ecall print int unsigned
-	mv a0,t1
-	li a7,136
-	li a1,148
-	li a2,56
-	li a3,0x0038
-	ecall
-	#ecall print int unsigned
-	mv a0,t0
-	li a7,136
-	li a1,236
-	li a2,56
-	li a3,0x0038
-	ecall
-		
+GAME_LOOP:	
 		call KEY2.1
 		xori s0,s0,1			# inverte o valor frame atual (somente o registrador)
 		mv a4, s0

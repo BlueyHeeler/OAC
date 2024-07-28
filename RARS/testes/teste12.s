@@ -213,100 +213,33 @@ blue: .word 40, 40
 192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,
 192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,
 
-NUMERO_NOTAS: .half 198          # N mero de notas a tocar
-CONTADOR: .half 0
-    			# Lista de notas (tom, dura  o, tom, dura  o, ...)
-    			# adicionado (0, 1000) para facilitar o código
-NOTAS: .half 0,1000,60,156,72,156,60,156,72,156,71,156,60,156,71,156,67,937,64,312,62,156,60,
-    	156,72,156,60,156,72,156,71,156,60,156,71,156,67,156,60,156,67,156,60,156,67,
-    	156,60,156,64,156,65,156,64,156,62,156,72,156,60,156,72,156,71,156,60,156,71,
-    	156,67,937,64,312,62,156,60,156,64,156,62,156,60,156,64,156,62,156,60,156,67,
-    	625,62,937,53,158,55,158,55,158,55,316,50,316,50,316,48,316,52,316,50,316,50,
-    	632,52,316,50,316,50,316,50,158,48,158,52,316,48,316,48,158,60,158,48,158,60,
-    	158,59,158,48,158,59,158,55,158,48,158,55,158,48,158,55,158,48,158,52,316,50,
-    	158,48,158,60,158,48,158,60,158,59,158,48,158,59,158,55,158,48,158,55,158,48,
-    	158,55,158,48,158,52,158,53,158,52,158,50,158,55,158,55,316,52,316,52,316,52,
-    	158,50,316,50,158,52,316,50,158,50,158,50,632,52,316,50,158,50,158,50,316,48,
-    	316,52,158,50,158,50,474,50,474,50,474,48,948,52,316,50,158,48,158,60,158,48,
-    	158,60,158,59,158,48,158,59,158,55,158,48,158,55,158,48,158,55,158,48,158,52,
-    	158,53,158,52,158,50,158,48,158,48,158,48,158,52,158,52,158,52,158,50,474,48,
-    	158,48,316,52,316,50,158,48,1422,48,158,48,316,55,316,50,2054,48,316,52,316,
-    	48,316,48,948,47,316,47,632,47,158,47,474,48,474,55,1264,47,316,47,474,48,474,
-    	45,1422,47,158,47,474,48,474,55,1264,47,316,47,474,48,474,48,948,48,316,47,316,
-    	47,474,48,474,55,316,53,316,52,474,52,474,52,474,52,474,52,158,50,158,48,316,48,
-    	158,48,158,47,316,47,316,48,316,48,632,52,474,50,474,50,2370,48,158,48,632,
-    	
+
 POS_MAPA: .half 0
 CHAR_POS_UP: .half 3, 1
 CHAR_POS_DOWN: .half 4, 1
 ITEM_1_BYTE: .byte 0
 PEQUENO_GRANDE: .byte 1
 RA_print_matriz: .word 0
-TEMPO_COOLDOWN: .word 0
+TEMPO_INICIAL: .word 0
 TEMPO_ATUAL: .word 0
-W_LIMIT: .byte 0
-VOANDO: .byte 0
+TEMPO_INI_MUSIC: .word 0
+TEMPO_BREAK_MUSIC: .word 0
 
 .text
-START:
-    		csrr s11, time		# tempo "inicial" música 
-    		la t0, TEMPO_COOLDOWN	# endereco do tempo "inicial" cooldown
-    		sw s11, 0(t0)		# salvando o tempo no endereco
-    		la s9, NOTAS		# endereco das notas 
-    		addi s9, s9, 4		# pulando as primeiras nota
-    		li t2, 0		# duracao da nota inicial
-    		
-
 GAME_LOOP:	
-    		csrr s10, time			# s10 = tempo atual
-    		la t0, TEMPO_ATUAL		# endereco do TEMPO_ATUAL
-    		sw s10, 0(t0)			# salvando no endereco
-    		sub s10, s10, s11		# tempo inicial - tempo atual
-    		call MUSIC			# chamada de funcao de musica
-    		call KEY2.1			# chamada de funcao de movimento
-   		xori s0, s0, 1          	# Inverte o valor do frame atual (somente o registrador)
-    		mv a3, s0			# troca de frame
-    		la t0, POS_MAPA			# endereco da posicao do mapa
-    		call PRINT_MATRIZ_2		# chamda de renderização
+		call KEY2.1
+		xori s0,s0,1			# inverte o valor frame atual (somente o registrador)
+		mv a3, s0
+		la t0, POS_MAPA
+		call PRINT_MATRIZ_2
+		
+		li t0,0xFF200604		# carrega em t0 o endereco de troca de frame
+		sw s0,0(t0)			# mostra o sprite pronto para o usuario
+		
+		j GAME_LOOP
 
-    		li t0, 0xFF200604       	# Carrega em t0 o endere o de troca de frame
-    		sw s0, 0(t0)            	# Mostra o sprite pronto para o usu rio
-    
-    		j GAME_LOOP			# volta ao Loop
-MUSIC:
-		lh t2, -2(s9)			# duracao da nota anterior
-		bge s10, t2, NEXT_NOTE		# caso o tempo for maior que a duracao da nota anterior va para proxima nota
-		ret				# retorna
-
-NEXT_NOTE:
-		lh a0, 0(s9)            	# Carrega a nota atual em a0
-    		lh a1, 2(s9)			# Duracao da nota
-    		li a2, 0                	# Define o instrumento
-    		li a3, 200              	# Define o volume
-    		li a7, 31               	# Define a syscall para tocar a nota
-    		ecall                   	# Toca a nota
-   		addi s9, s9, 4          	# Avanca para a proxima nota (cada entrada e 4 bytes)
-    		csrr s11, time          	# Le o tempo atual do registrador de tempo
-    		la t0, CONTADOR			# endereco do contador
-    		lh t1, 0(t0)			# carrega o contador 
-    		addi t1, t1, 1			# adiciona 1 ao contador
-    		sh t1, 0(t0)			# salva no endereco o contador atualizado
-    		lh t0, 0(t0)			# carrega o contador
-    		la t1, NUMERO_NOTAS		# endereco do total de notas da musica
-    		lh t1, 0(t1)			# carrega o numero total de notas
-    		bge t0, t1, END_MUSIC		# if t0 == t1, END_MUSIC
-    		ret                     	# Retorna para o chamador
-
-END_MUSIC:
-    		la s9, NOTAS			# reinicia as notas 
-    		la t0, CONTADOR			# endereco do contador
-    		sh zero, 0(t0)			# zera o contador
-    		li t2, 0			# duracao da nota inicial
-    		csrr s11, time			# atualiza o tempo "inicial"
-		ret				# Retorna 
-	    	
 PRINT_MATRIZ_2:	
-		la t0, RA_print_matriz		
+		la t0, RA_print_matriz
 		sw ra, 0(t0)
 		la t0, POS_MAPA			#posicao do mapa
 		lh t1, 0(t0)			#valor da posicao do mapa
@@ -323,7 +256,7 @@ PRINT_MATRIZ_2:
 		jal PULAR_COLUNA
 		
 PULAR_COLUNA:	beq s5, s2, PULAR_LINHA 	#s5 = s2 ? caso sim pule para caso_1
-		jal CASE1			#caso n o pule para iteracoes
+		jal CASE1				#caso n o pule para iteracoes
 
 PULAR_LINHA:	addi s1, s1, 8			#PULA OS BLOCOS QUE N O DEVEM SER IMPRESSOS, OU SEJA, PULA A LINHA
 		beq s6, s3, END			#s6 = s3 ? caso sim pule para end
@@ -333,54 +266,54 @@ PULAR_LINHA:	addi s1, s1, 8			#PULA OS BLOCOS QUE N O DEVEM SER IMPRESSOS, OU SE
 		j CASE1
 				
 CASE1:		lb s4, 0(s1)			#guarda os bytes de background em s4
-		li t0, 0			#t0 = 0
-		bne s4, t0, CASE2		#se s7 != s4
+		li s7, 0			#s7 = 0
+		bne s4, s7, CASE2		#se s7 != s4
 		la a0, black			#carrega em a0 o endereco de black
-		jal PRINT			#pula pro PRINT
+		jal PRINT
 		addi a1, a1, 40			#a1 += 40	
 		addi s1, s1, 1			#s1 += 1
 		addi s5, s5, 1			#s5 += 1
 		j PULAR_COLUNA	
 		
-CASE2:		li t0, 1			#t0 = 1
-		bne s4, t0, CASE3		#se s7 != s4
-		la a0, gray			#a0 = endereco da tile gray
-		jal PRINT		
+CASE2:		li s7, 1
+		bne s4, s7, CASE3		#se s7 != s4
+		la a0, gray
+		jal PRINT
 		addi a1, a1, 40			#a1 += 40	
 		addi s1, s1, 1			#s1 += 1
 		addi s5, s5, 1			#s5 += 1
 		j PULAR_COLUNA
 
 CASE3:		
-		li t0 2				#t0 = 2
-		bne s4, t0, CASE4		#if s4 == t0, CASE4
-		li t0, 1			#t0 = 1
-		beq a3, t0, CASE3_2		#if a3 == t0, CASE3_2
-		la a0, red			#carrega endereco da tile red 
-		jal PRINT			
+		li t0, 1
+		li s7 2
+		bne s4, s7, CASE4
+		beq a3, t0, CASE3_2
+		la a0, red
+		jal PRINT
 		addi a1, a1, 40			#a1 += 40	
 		addi s1, s1, 1			#s1 += 1
 		addi s5, s5, 1			#s5 += 1
 		j PULAR_COLUNA
 CASE3_2:
-		la a0, yellow			#carrega endereco da tile amarela
+		la a0, yellow
 		jal PRINT
-		addi a1, a1, 40			#a1 += 40
-		addi s1, s1, 1			#s1 += 1
-		addi s5, s5, 1			#s5 += 1
+		addi a1, a1, 40
+		addi s1, s1, 1
+		addi s5, s5, 1
 		j PULAR_COLUNA
 
 CASE4:		
-		la a0, blue			#carrega endereco da tile azul
-		jal PRINT			
-		addi a1, a1, 40			#a1 += 40
-		addi s1, s1, 1			#s1 += 1
-		addi s5, s5, 1			#s5 += 1
+		la a0, blue
+		jal PRINT
+		addi a1, a1, 40
+		addi s1, s1, 1
+		addi s5, s5, 1
 		j PULAR_COLUNA	
 
 END:
-		la t0, RA_print_matriz		#carrega endereco do return adress da funcao_print_matriz
-		lw ra, 0(t0)			#carrega o ra
+		la t0, RA_print_matriz
+		lw ra, 0(t0)
 		ret
 
 PRINT:		li t0,0xFF0			# carrega 0xFF0 em t0
@@ -429,20 +362,32 @@ PRINT_LINHA:	lw t6,0(t1)			# carrega em t6 uma word (4 pixeis) da imagem
 KEY2.1:		li t1,0xFF200000		# carrega o endereco de controle do KDMMIO
 		lw t0,0(t1)			# Le bit de Controle Teclado
 		andi t0,t0,0x0001		# mascara o bit menos significativo
-   		beq t0,zero,GRAVIDADE   	# Se nao ha tecla pressionada entao vai para FIM
+   		beq t0,zero,DEFAULT   	# Se nao ha tecla pressionada entao vai para FIM
   		lw t2,4(t1)  			# le o valor da tecla tecla
 		
-		li t0,'w'
+		li t0,'W'
 		beq t2,t0,CIMA			# se tecla pressionada for 'w', va CHAR_CIMA
 
-		li t0,'a'
+		li t0,'A'
 		beq t2,t0,ESQUERDA		# se tecla pressionada for 'a', va CHAR_CIMA
 		
-		li t0,'s'
+		li t0,'S'
 		beq t2,t0,BAIXO			# se tecla pressionada for 's', va CHAR_CIMA
 		
-		li t0,'d'
+		li t0,'D'
 		beq t2,t0,DIREITA		# se tecla pressionada for 'd', va CHAR_CIMA
+		
+		li t0,'w'
+		beq t2,t0,CIMA_w			# se tecla pressionada for 'w', va CHAR_CIMA
+
+		li t0,'a'
+		beq t2,t0,ESQUERDA_a		# se tecla pressionada for 'a', va CHAR_CIMA
+		
+		li t0,'s'
+		beq t2,t0,BAIXO_b		# se tecla pressionada for 's', va CHAR_CIMA
+		
+		li t0,'d'
+		beq t2,t0,DIREITA_d		# se tecla pressionada for 'd', va CHAR_CIMA
 		
 		li t0,'o'		
 		beq t2, t0,MOV_ESQ		# se tecla pressionada for 'o', va MOV_ESQ
@@ -471,37 +416,19 @@ KEY2.1:		li t1,0xFF200000		# carrega o endereco de controle do KDMMIO
 		li t0,'u'			# se tecla pressionada for 'u' va EXIT
 		beq t2,t0,EXIT
 	
-GRAVIDADE:	
-		la t0, TEMPO_ATUAL		#carrega o endereco do TEMPO_ATUAL
-		lw t0, 0(t0)			#carrega o TEMPO_ATUAL
-		la t1, TEMPO_COOLDOWN		#carrega o endereco do TEMPO_COOLDOWN
-		lw t1, 0(t1)			#carrega o TEMPO_COOLDOWN
-		sub t0, t0, t1			#t0 = t0 - t1
-		mv a0, t0			#a0 = t0
-		li a7,101			
-		li a1,0
-		li a2,0
-		li a3,0x0038
-		mv a4, s0			
-		ecall				#printa o a0
-		li t1, 500			#500 milésimos
-		bge t1, t0, FIM			#if t1 >= t0, FIM
-		la t0, VOANDO			#carrega o endereco do de voando em t0
-		lb t0, 0(t0)			#carrega em t0 se esta voando ou nao
-		beq t0, zero, FIM		#se nao estiver voando, FIM
-		la t0, PEQUENO_GRANDE		#carrega o endereco do PEQUENO_GRANDE
-		lb t0, 0(t0)			#carrega em t0 se esta pequeno ou grande
-		beq t0, zero, BAIXO_s		#se esta pequeno va para BAIXO_B
-		j BAIXO				#se esta grande
+DEFAULT:		
+		mv t0, zero
+		mv t1, zero
+		mv t2, zero
+		mv t3, zero
+		mv t4, zero
+		mv t5, zero
+		ret				# retorna
 		
 CIMA:		
-		la t0, W_LIMIT			#carrega o endereco do limitador do quanto pode subir
-		lb t0, 0(t0)			#carrega em t0 o quanto subiu
-		li t1, 2			#t1 = 2
-		beq t0, t1, FIM			#if t0 == t1, FIM, ou seja, não pode mais subir
-		la t0, PEQUENO_GRANDE		#carrega o endereco de pequeno_grande
-		lb t0, 0(t0)			#carrega em t0 se esta pequeno ou grande
-		beq t0, zero, CIMA_w		#if t0 == 0, esta pequeno
+		la t0, PEQUENO_GRANDE
+		lb t0, 0(t0)
+		beq t0, zero, FIM
 		#CIMA PARTE SUPERIOR
 		la t0, background2	#endereco do mini_background
 		addi t0, t0, 8		#pula a largura e a altura
@@ -565,22 +492,12 @@ CIMA:
 		lh t3, 0(t2)		#carrega o y em t3
 		addi t3, t3, -1		#decrementa um em t3
 		sh t3, 0(t2)		#novo CHAR_POS
-		la t0, VOANDO
-		li t1, 1
-		sb t1, 0(t0)
-		csrr t0, time
-		la t1, TEMPO_COOLDOWN
-		sw t0, 0(t1)
-		la t0, W_LIMIT
-		lb t1, 0(t0)
-		addi t1, t1, 1
-		sb t1, 0(t0)
 		j FIM
 
 BAIXO:
 		la t0, PEQUENO_GRANDE
 		lb t0, 0(t0)
-		beq t0, zero, BAIXO_s
+		beq t0, zero, FIM
 		#BAIXO SUPERIOR
 		la t0, background2	#endereco do mini_background
 		addi t0, t0, 8		#pula a largura e a altura
@@ -598,7 +515,7 @@ BAIXO:
 		li t5, 1 		#t5 = 1
 		addi t0, t0, -16
 		#====================================================================#
-		beq t3, t5, RESET_COOLDOWN	#v  para GAME_LOOP
+		beq t3, t5, GAME_LOOP	#v  para GAME_LOOP
 		addi sp, sp, -24
 		sw ra, 0(sp)
 		sw t0, 4(sp)
@@ -623,7 +540,7 @@ BAIXO:
 		lb t3, 0(t0)		#carrega o valor de CHAR_POS da matriz
 		li t5, 1 		#t5 = 1
 		addi t0, t0, -16
-		beq t3, t5, RESET_COOLDOWN	#v  para GAME_LOOP
+		beq t3, t5, GAME_LOOP	#v  para GAME_LOOP
 		jal ITEM_1
 		#===================================================================#
 		li t3, 0		#carrega 0 em t3
@@ -655,7 +572,7 @@ BAIXO:
 ESQUERDA:
 		la t0, PEQUENO_GRANDE
 		lb t0, 0(t0)
-		beq t0, zero, ESQUERDA_a
+		beq t0, zero, FIM
 		#ESQUERDA SUPERIOR
 		la t0, background2	#endereco do mini_background
 		addi t0, t0, 8		#pula a largura e a altura
@@ -725,15 +642,12 @@ ESQUERDA:
 		lh t3, 2(t2)		#carrega o x em t3
 		addi t3, t3, -1		#decrementa um em t3
 		sh t3, 2(t2)		#novo CHAR_POS
-		la t0, VOANDO
-		li t1, 1
-		sb t1, 0(t0)
 		j FIM
 	
 DIREITA:
 		la t0, PEQUENO_GRANDE
 		lb t0, 0(t0)
-		beq t0, zero, DIREITA_d
+		beq t0, zero, FIM
 		#DIREITA SUPERIOR
 		la t0, background2	#endereco do mini_background
 		addi t0, t0, 8		#pula a largura e a altura
@@ -800,9 +714,6 @@ DIREITA:
 		lh t3, 2(t2)		#carrega o x em t3
 		addi t3, t3, 1		#decrementa um em t3
 		sh t3, 2(t2)		#novo CHAR_POS
-		la t0, VOANDO
-		li t1, 1
-		sb t1, 0(t0)
 		j FIM
 
 MOV_ESQ:	la t0, POS_MAPA		#endereco da posicao do mapa
@@ -873,15 +784,14 @@ GROW:
 		j FIM
 		
 HALF:		
-		la t0, PEQUENO_GRANDE	#carrega o endereco de PEQUENO_GRANDE
-		lb t0, 0(t0)		#carrega em t0 o valor de PEQUENO_GRANDE
-		beq t0, zero, FIM	#se t0 == 0, ou seja, ja esta pequeno, FIM
-		la t0, ITEM_1_BYTE	#carrega o endereco de ITEM_1_BYTE
-		lb t0, 0(t0)		#carrega em t0 se já possui o item
-		beq t0, zero, FIM	#se t0 == 0, ou seja, nao tem item, FIM
-		la t0, PEQUENO_GRANDE	#carrega o endereco de PEQUENO_GRANDE
-		sb zero, 0(t0)		#PEQUENO_GRANDE == 0, personagem fica pequeno
-		#serve para colapsar a parte de cima
+		la t0, PEQUENO_GRANDE
+		lb t0, 0(t0)
+		beq t0, zero, FIM
+		la t0, ITEM_1_BYTE
+		lb t0, 0(t0)
+		beq t0, zero, FIM
+		la t0, PEQUENO_GRANDE
+		sb zero, 0(t0)
 		#BAIXO PARTE SUPERIOR
 		la t0, background2	#endereco do mini_background
 		addi t0, t0, 8		#pula a largura e a altura
@@ -909,10 +819,6 @@ HALF:
 		j FIM
 
 CIMA_w:		
-		la t0, W_LIMIT
-		lb t0, 0(t0)
-		li t1, 2
-		beq t0, t1, FIM
 		la t0, PEQUENO_GRANDE
 		lb t0, 0(t0)
 		li t1, 1
@@ -937,26 +843,16 @@ CIMA_w:
 		li t3, 0		#carrega 0 em t3
 		sb t3, 0(t0)		#colocando 0 no endereco
 		li t3, 2		#carrega 2 em t3
-		addi t0, t0, -16	#novo endereco do CHAR_POS na matriz
+		addi t0, t0, -16		#novo endereco do CHAR_POS na matriz
 		sb t3, 0(t0)		#colocando 2 no endereco
 		lh t3, 0(t2)		#carrega o y em t3
 		addi t3, t3, -1		#decrementa um em t3
 		sh t3, 0(t2)		#novo CHAR_POS
 		la t2, CHAR_POS_UP
 		sh t3, 0(t2)
-		la t0, VOANDO
-		li t1, 1
-		sb t1, 0(t0)
-		csrr t0, time
-		la t1, TEMPO_COOLDOWN
-		sw t0, 0(t1)
-		la t0, W_LIMIT
-		lb t1, 0(t0)
-		addi t1, t1, 1
-		sb t1, 0(t0)
 		j FIM
 
-BAIXO_s:
+BAIXO_b:
 		la t0, PEQUENO_GRANDE
 		lb t0, 0(t0)
 		li t1, 1
@@ -977,7 +873,7 @@ BAIXO_s:
 		lb t3, 0(t0)		#carrega o valor de CHAR_POS da matriz
 		li t5, 1 		#t5 = 1
 		addi t0, t0, -16
-		beq t3, t5, RESET_COOLDOWN	#v  para GAME_LOOP
+		beq t3, t5, GAME_LOOP	#v  para GAME_LOOP
 		#fim do procedimento que averigua colisao
 		li t3, 0		#carrega 0 em t3
 		sb t3, 0(t0)		#colocando 0 no endereco
@@ -1024,9 +920,6 @@ ESQUERDA_a:
 		sh t3, 2(t2)		#novo CHAR_POS
 		la t2, CHAR_POS_UP
 		sh t3, 2(t2)
-		la t0, VOANDO
-		li t1, 1
-		sb t1, 0(t0)
 		j FIM
 	
 DIREITA_d:
@@ -1062,37 +955,28 @@ DIREITA_d:
 		sh t3, 2(t2)		#novo CHAR_POS
 		la t2, CHAR_POS_UP
 		sh t3, 2(t2)
-		la t0, VOANDO
-		li t1, 1
-		sb t1, 0(t0)
 		j FIM
-		
-RESET_COOLDOWN:
-		la t0, W_LIMIT
-		sb zero, 0(t0)
-		la t0, VOANDO
-		sb zero, 0(t0)
-		j FIM
+
 ITEM_1:
-		li t5, 3
-		beq t3, t5, TEM_ITEM_1
-		ret
+	li t5, 3
+	beq t3, t5, TEM_ITEM_1
+	ret
 	
 TEM_ITEM_1:
-		la a0, ITEM_1_BYTE
-		li a1, 1
-		sb a1, 0(a0)
-		ret
+	la a0, ITEM_1_BYTE
+	li a1, 1
+	sb a1, 0(a0)
+	ret
 FIM:
-		mv a0, zero
-		mv a1, zero
-		mv t0, zero
-		mv t1, zero
-		mv t2, zero
-		mv t3, zero
-		mv t4, zero
-		mv t5, zero
-		ret
+	mv a0, zero
+	mv a1, zero
+	mv t0, zero
+	mv t1, zero
+	mv t2, zero
+	mv t3, zero
+	mv t4, zero
+	mv t5, zero
+	ret
 EXIT:
 		li a7, 10
 		ecall
