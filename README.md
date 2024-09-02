@@ -1,2 +1,2 @@
 # OAC
-Projeto Final de OAC e alguns estudos sobre Assembly RISC-V .
+Projeto Final de OAC para mais detalhes leia o PDF.
