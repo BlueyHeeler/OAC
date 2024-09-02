@@ -1,2 +1,2 @@
 # OAC
-Projeto Final de OAC para mais detalhes leia o PDF.
+Projeto Final de OAC, para mais detalhes leia o PDF.
